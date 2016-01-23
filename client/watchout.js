@@ -9,9 +9,10 @@ var Board = function(numEnemies) {
 
   this.d3enemies = d3.select('svg').selectAll('image').data(this.enemies).enter().
                                       append('image').
-                                      attr('xlink:href', 'asteroid.png').
+                                      attr('xlink:href', 'shuriken.png').
                                       attr('height', function(d){return d.size;}).
-                                      attr('width', function(d){return d.size;});
+                                      attr('width', function(d){return d.size;}).
+                                      attr('class', 'enemy');
   
   this.player = new Player(this.width / 2, this.height / 2, 20);
 
@@ -157,6 +158,6 @@ Player.prototype.isCollision = function(enemyX, enemyY, radius) {
   return Math.sqrt(Math.pow((this.x - centerX), 2) + Math.pow((this.y - centerY), 2)) < (this.radius + radius);
 };
 
-var b = new Board(1);
+var b = new Board(5);
 
 

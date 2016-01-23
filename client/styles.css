@@ -5,3 +5,16 @@ Feel free to use it if you like. */
 .board {
   background-color: black;
 }
+
+.enemy {
+  position: absolute;
+  animation: spin 1s linear infinite;
+  /*svg rotates around0,0 not center of element, below fixes that*/
+  transform-origin: 50% 50%;
+}
+
+@keyframes spin {
+  100% {
+    transform:rotate(360deg);
+  }
+}
