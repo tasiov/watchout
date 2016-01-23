@@ -2,6 +2,9 @@ var Board = function(numEnemies) {
   this.width = d3.select('svg').attr('width');
   this.height = d3.select('svg').attr('height');
   this.collisions = 0;
+  this.highScore = 0;
+  this.currentScore = 0;
+
   this.enemies = this.generateEnemies(numEnemies, 40);
 
   this.d3enemies = d3.select('svg').selectAll('image').data(this.enemies).enter().
@@ -26,21 +29,42 @@ var Board = function(numEnemies) {
   this.timeoutRef = null;
 };
 
+var counter = 0;
 Board.prototype.collisionLoop = function() {
   //Loop d3 enemies
   var self = this;
-  this.d3enemies.each(function(){
+  this.d3enemies.each(function(data){
     var x = this.getAttribute('x');
     var y = this.getAttribute('y');
     var height = this.getAttribute('height');
     
     if (self.player.isCollision(x, y, height/2)) {
-      // debugger;
-      self.collisions++;
-      self.setElementText('collisions', self.collisions);
+      if (!data.colliding){
+        //Handle collision
+        self.collisions++;
+        self.setElementText('collisions', 'Collisions: ' + self.collisions);
+        data.colliding = true;
+        self.player.colliding = true;
+        
+        //Handle high score;
+        if(self.currentScore > self.highScore) {
+          self.highScore = self.currentScore;
+          self.setElementText('highscore', 'High score: ' + self.highScore);
+        }
+
+        self.currentScore = 0;
+        self.setElementText('current', 'Current score: ' + self.currentScore);
+      }
+    } else {
+      data.colliding = false;
+      self.player.colliding = false;
     }
   });
 
+  if (!self.player.colliding) {
+    self.currentScore++;
+    self.setElementText('current', 'Current score: ' + self.currentScore);
+  }
   var boundFn = this.collisionLoop.bind(this);
   setTimeout(boundFn, 20);
 };
@@ -57,11 +81,9 @@ Board.prototype.eventLoop = function() {
 
   //rerender the view
   this.d3enemies.transition('moveEnemy').duration(1000).
-  attr('x', function(d) {return d.x;}).
-  attr('y', function(d) {return d.y;});
+                  attr('x', function(d) {return d.x;}).
+                  attr('y', function(d) {return d.y;});
 
-  //did we hit anythign
-  
 
   var boundFn = this.eventLoop.bind(this);
   this.timeoutRef = setTimeout(boundFn, 1500);
@@ -114,6 +136,7 @@ var Enemy = function(x,y,s){
   this.x = x;
   this.y = y;
   this.size = s;
+  this.colliding = false;
 };
 
 Enemy.prototype.checkCollisions = function() {
@@ -124,6 +147,7 @@ var Player = function(x,y,r) {
   this.x = x;
   this.y = y;
   this.radius = r;
+  this.colliding = false;
 };
 
 Player.prototype.isCollision = function(enemyX, enemyY, radius) {
