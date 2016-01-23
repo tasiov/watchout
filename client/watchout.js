@@ -1,6 +1,6 @@
 var Board = function(numEnemies) {
   this.width = d3.select('svg').attr('width');
-  this.height = d3.select('svg').attr('height');;
+  this.height = d3.select('svg').attr('height');
   this.collisions = 0;
   this.enemies = this.generateEnemies(numEnemies, 40);
 
@@ -20,37 +20,51 @@ var Board = function(numEnemies) {
                                     attr('r', this.player.radius).
                                     attr('fill', 'green');
 
+
   this.d3player.on('mousedown', this.startGame.bind(this));
+
+  this.timeoutRef = null;
 };
+
+Board.prototype.collisionLoop = function() {
+  //Loop d3 enemies
+  var self = this;
+  this.d3enemies.each(function(){
+    var x = this.getAttribute('x');
+    var y = this.getAttribute('y');
+    var height = this.getAttribute('height');
+    
+    if (self.player.isCollision(x, y, height/2)) {
+      // debugger;
+      self.collisions++;
+      self.setElementText('collisions', self.collisions);
+    }
+  });
+
+  var boundFn = this.collisionLoop.bind(this);
+  setTimeout(boundFn, 20);
+};
+
+Board.prototype.stopEventLoop = function(){
+  clearTimeout(this.timeoutRef);
+};
+
 Board.prototype.eventLoop = function() {
   var self = this;
 
   //reposition the enemies
-  console.log(this.enemies[0]);
   this.moveEnemies();
 
   //rerender the view
-  this.d3enemies.transition('moveEnemy').tween('moveEnemy', function(data){
-    var d3obj = d3.select(this);
-
-    var interpolateX = d3.interpolateNumber(d3obj.attr('cx'), data.x);
-    var interpolateY = d3.interpolateNumber(d3obj.attr('cy'), data.y);
-
-    return function(t) {
-      if(self.player.isCollision(interpolateX(t), interpolateY(t), data.size/2)) {
-        self.collisions++;
-        self.setElementText('collisions', self.collisions);
-      }
-    };
-  }).
-  duration(1000).attr('x', function(d) {return d.x;}).
+  this.d3enemies.transition('moveEnemy').duration(1000).
+  attr('x', function(d) {return d.x;}).
   attr('y', function(d) {return d.y;});
 
   //did we hit anythign
   
 
   var boundFn = this.eventLoop.bind(this);
-  setTimeout(boundFn, 1500);
+  this.timeoutRef = setTimeout(boundFn, 1500);
 };
 
 Board.prototype.moveEnemies = function() {
@@ -75,11 +89,10 @@ Board.prototype.generateEnemies = function(numEnemies, size) {
 };
 
 Board.prototype.startGame = function() {
-  console.log('hit');
   this.d3player.on('mousedown', null);
   var self = this;
   d3.select('svg ').on('mousemove', function(e){
-    console.log(e);
+
     self.player.x = d3.mouse(document.getElementsByClassName('board')[0])[0];
     self.player.y = d3.mouse(document.getElementsByClassName('board')[0])[1];
     self.d3player.attr('cx', function(d){return d.x;}). 
@@ -88,6 +101,7 @@ Board.prototype.startGame = function() {
   });
 
   this.eventLoop();
+  this.collisionLoop();
 };
 
 Board.prototype.setElementText = function(className, text) {
@@ -95,10 +109,15 @@ Board.prototype.setElementText = function(className, text) {
   element[0].innerHTML = text;
 };
 
+
 var Enemy = function(x,y,s){
   this.x = x;
   this.y = y;
   this.size = s;
+};
+
+Enemy.prototype.checkCollisions = function() {
+
 };
 
 var Player = function(x,y,r) {
@@ -108,8 +127,12 @@ var Player = function(x,y,r) {
 };
 
 Player.prototype.isCollision = function(enemyX, enemyY, radius) {
-  console.log(this.x +' '+ this.y);
-  return Math.sqrt(Math.pow((this.x - enemyX), 2) + Math.pow((this.y - enemyY), 2)) < (this.radius + radius);
+  var centerX = parseInt(enemyX) + radius;
+  var centerY = parseInt(enemyY) + radius;
+
+  return Math.sqrt(Math.pow((this.x - centerX), 2) + Math.pow((this.y - centerY), 2)) < (this.radius + radius);
 };
 
-var b = new Board(2);
+var b = new Board(1);
+
+
